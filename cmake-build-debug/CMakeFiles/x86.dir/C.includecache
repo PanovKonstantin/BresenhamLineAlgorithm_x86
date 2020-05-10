@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+D:/Studia/Semestr 2/ARKO/Projeky/Bresenham/x86/main.c
+stdio.h
+-
+stdlib.h
+-
+memory.h
+-
+math.h
+-
+

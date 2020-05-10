@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig authType="PASSWORD" host="galera.ii.pw.edu.pl" id="f539616f-80b4-414d-9812-303c5e057b23" port="22" customName="galera" nameFormat="CUSTOM" username="kpanov" />
+    </configs>
+  </component>
+</project>

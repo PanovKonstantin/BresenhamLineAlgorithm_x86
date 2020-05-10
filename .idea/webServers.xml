@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="3d7affb7-e526-4f26-a607-f1be674db599" name="galera">
+        <fileTransfer rootFolder="/home/users/kpanov" accessType="SFTP" host="galera.ii.pw.edu.pl" port="22" sshConfigId="f539616f-80b4-414d-9812-303c5e057b23" sshConfig="galera">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

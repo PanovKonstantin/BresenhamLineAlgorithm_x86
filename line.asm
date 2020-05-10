@@ -64,11 +64,12 @@ calculate_pix:
 
     push ebp
     mov ebp, esp
-    mov eax, [ebp+12]
-    mov ebx, [ebp+16]
-    imul eax, ebx
+    mov ebx, [ebp+12]
+    mov ecx, [ebp+16]
+    imul ebx, ecx
+    mov eax, ebx
     mov ebx, [ebp+8]
-    add eax, ebp
+    add eax, ebx
     mov ebx, [ebp+20]
     shr ebx, 3
     add eax, ebx

@@ -245,7 +245,15 @@ int testBresenham(int a)
 }
 int test()
 {
-
+    int x1 = 64, y1 =64, x2 = 1, y2 = 1;
+    imgInfo* pInfo;
+    pInfo = InitScreen(128, 128);
+    calculate_info(pInfo, x1, y1, x2, y2);
+    pInfo->pPix = calculate_pix(pInfo->pImg, pInfo->width_byte, y1, x1);
+    *pInfo->pPix &= ~pInfo->mask;
+    saveBMP(pInfo, "result.bmp");
+    FreeScreen(pInfo);
+    return *pInfo->pPix;
 }
 int main(int argc, char* argv[])
 {

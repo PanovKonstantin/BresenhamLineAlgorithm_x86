@@ -179,13 +179,10 @@ void Bresenham(imgInfo* pImg, int x1, int y1, int x2, int y2)
 {
     calculate_info(pImg, x1, y1, x2, y2);
     pImg->pPix = calculate_pix(pImg->pImg, pImg->width_byte, y1, x1);
-    pImg->dx = x2 - x1;
-    pImg->dy = y1 - y2;
     pImg->sx = 1;
     pImg->sy = 1;
     if (x1 > x2)
     {
-        pImg->dx = -pImg->dx;
         pImg->sx = -1;
     }
     if (y1 > y2)

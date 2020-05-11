@@ -184,13 +184,11 @@ imgInfo* InitScreen (int w, int h)
 }
 
 // extern lineInfo* calculate_info(lineInfo* lInfo, int width, int x1, int x2, int y1, int y2);
-extern unsigned char * calculate_pix(unsigned char * pImg, int width, int y, int x);
 extern void calculate_info(imgInfo* pImg, int x1, int y1, int x2, int y2);
 extern int draw_line(imgInfo* pImg, int x1, int y1, int x2, int y2);
 void Bresenham(imgInfo* pImg, int x1, int y1, int x2, int y2)
 {
     calculate_info(pImg, x1, y1, x2, y2);
-    pImg->pPix = calculate_pix(pImg->pImg, pImg->width_byte, y1, x1);
     int e2;
     while (1<2)
     {
@@ -245,8 +243,6 @@ int test()
     int x1 = 23, y1 =40, x2 = 10, y2 = 1;
     imgInfo* pInfo;
     pInfo = InitScreen(128, 128);
-    calculate_info(pInfo, x1, y1, x2, y2);
-    pInfo->pPix = calculate_pix(pInfo->pImg, pInfo->width_byte, y1, x1);
     int qwe = draw_line(pInfo, x1, y1, x2, y2);
 //    *pInfo->pPix &= ~pInfo->mask;
     saveBMP(pInfo, "result.bmp");

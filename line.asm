@@ -7,6 +7,7 @@ section .data
     x_side  dd 1
     y_side  dd 1
     error   dd 0
+    end_pixel   dd 0
 
 section .text
 global _draw_line
@@ -22,14 +23,23 @@ _draw_line:
 draw_line:
     push ebp
     mov ebp, esp
+
+    call calculate_info
+
     mov ebx, [ebp+8]    ;   Argument
     mov ecx, [ebx+36]   ;   Pixel address
     mov [pixel], ecx    ;   Load pixel address in variable
     mov eax, [ecx]      ;   Pixel
     mov edx, [ebx+40]   ;   Mask
+    mov [mask], edx     ;   Load mask in variable
     not edx             ;   ~Mask
+
+draw_line_loop:
     and eax, edx        ;   Pixel And ~Mask
     mov [ecx], eax      ;   Load result in pixel address
+    mov ecx, [ebx+28]   ;   Err
+    mov edx, ecx
+    shl edx, 1
 
     pop ebp
     ret
@@ -37,11 +47,14 @@ draw_line:
 
 _calculate_info:
 calculate_info:
-    push ebp
-    mov ebp, esp
 
     call calculate_width
+
+    call calculate_pix
+
     call calculate_mask
+
+
     mov edx, [ebp+8]    ; struct address
     call calculate_dx
     call calculate_dy
@@ -51,8 +64,6 @@ calculate_info:
     mov [error], eax
     mov [edx+28], eax
 
-
-    pop ebp
     ret
 
 calculate_dx:
@@ -122,20 +133,28 @@ shift_mask_end:
 
 _calculate_pix:
 calculate_pix:
+    mov edx, [ebp+8]    ; edx - struct
 
-    push ebp
-    mov ebp, esp
-    mov ebx, [ebp+12]
-    mov ecx, [ebp+16]
-    imul ebx, ecx
-    mov eax, ebx
-    mov ebx, [ebp+8]
-    add eax, ebx
-    mov ebx, [ebp+20]
-    shr ebx, 3
-    add eax, ebx
-    mov [pixel], eax
-    pop ebp
+    mov ecx, [width]    ; ecx = width
+    mov eax, [ebp+16]   ; eax = y1
+    imul eax, ecx       ; eax = width * y1
+    mov ebx, [ebp+12]   ; ebx = x1
+    shr ebx, 3          ; ebx >> 3
+    add eax, ebx        ; eax += x1 >> 3
+    mov ebx, [edx+32]   ; ebx = start pixel address
+    add eax, ebx        ; eax += start address
+    mov [pixel], eax    ; load pixel address in variable
+    mov [edx+36], eax   ; load pixel address in struct
+
+    mov eax, [ebp+24]   ; eax = y2
+    imul eax, ecx       ; eax *= width
+    add eax, ebx        ; eax += start address
+    mov ebx, [ebp+20]   ; ebx = x2
+    shr ebx, 3          ; ebx >> 3
+    add eax, ebx        ; eax += x2 >> 3
+    mov [end_pixel], eax    ; load pixel address in variable
+    mov [edx+44], eax   ; load pixel address in struct
+
     ret
 
 

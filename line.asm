@@ -22,12 +22,15 @@ _draw_line:
 draw_line:
     push ebp
     mov ebp, esp
-    mov ebx, [ebp+8]
-    mov edx, [ebx+36]       ; pixel address pointer
-    mov eax, [edx]          ; pixel address
-    mov ecx, [ebx+40]
-    and eax, ecx
-    mov [edx], eax
+    mov ebx, [ebp+8]    ;   Argument
+    mov ecx, [ebx+36]   ;   Pixel address
+    mov [pixel], ecx    ;   Load pixel address in variable
+    mov eax, [ecx]      ;   Pixel
+    mov edx, [ebx+40]   ;   Mask
+    not edx             ;   ~Mask
+    and eax, edx        ;   Pixel And ~Mask
+    mov [ecx], eax      ;   Load result in pixel address
+
     pop ebp
     ret
 

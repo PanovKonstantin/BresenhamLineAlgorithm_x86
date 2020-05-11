@@ -43,6 +43,7 @@ typedef struct
     unsigned char* pImg;	    // wskazanie na początek danych pikselowych     Bytes: 32
     unsigned char* pPix;        // wskazanie na aktualny piksel                 Bytes: 36
     unsigned char mask;         // maska aktualnego piksela                     Bytes: 40
+    unsigned char* endPix;      // wskazanie na ostatni rysowany piksel         Bytes: 44
 } imgInfo;
 
 void* freeResources(FILE* pFile, void* pFirst, void* pSnd)
@@ -185,7 +186,7 @@ imgInfo* InitScreen (int w, int h)
 // extern lineInfo* calculate_info(lineInfo* lInfo, int width, int x1, int x2, int y1, int y2);
 extern unsigned char * calculate_pix(unsigned char * pImg, int width, int y, int x);
 extern void calculate_info(imgInfo* pImg, int x1, int y1, int x2, int y2);
-extern int draw_line(imgInfo* pImg);
+extern int draw_line(imgInfo* pImg, int x1, int y1, int x2, int y2);
 void Bresenham(imgInfo* pImg, int x1, int y1, int x2, int y2)
 {
     calculate_info(pImg, x1, y1, x2, y2);
@@ -246,7 +247,7 @@ int test()
     pInfo = InitScreen(128, 128);
     calculate_info(pInfo, x1, y1, x2, y2);
     pInfo->pPix = calculate_pix(pInfo->pImg, pInfo->width_byte, y1, x1);
-    int qwe = draw_line(pInfo);
+    int qwe = draw_line(pInfo, x1, y1, x2, y2);
 //    *pInfo->pPix &= ~pInfo->mask;
     saveBMP(pInfo, "result.bmp");
     FreeScreen(pInfo);

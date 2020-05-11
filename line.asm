@@ -4,20 +4,33 @@ section .data
     width   dd 0
     x_diff  dd 0
     y_diff  dd 0
-    x_side  db 1
-    y_side  db 1
+    x_side  dd 1
+    y_side  dd 1
     error   dd 0
 
 section .text
+global _draw_line
+global draw_line
 global _calculate_pix
 global calculate_pix
-global calculate_width
-global _calculate_width
-global _calculate_mask
-global calculate_mask
 global calculate_info
 global _calculate_info
 global test_1
+
+
+_draw_line:
+draw_line:
+    push ebp
+    mov ebp, esp
+    mov ebx, [ebp+8]
+    mov edx, [ebx+36]       ; pixel address pointer
+    mov eax, [edx]          ; pixel address
+    mov ecx, [ebx+40]
+    and eax, ecx
+    mov [edx], eax
+    pop ebp
+    ret
+
 
 _calculate_info:
 calculate_info:
@@ -26,34 +39,53 @@ calculate_info:
 
     call calculate_width
     call calculate_mask
+    mov edx, [ebp+8]    ; struct address
+    call calculate_dx
+    call calculate_dy
 
-;dx
+    mov eax, [x_diff]
+    add eax, [y_diff]
+    mov [error], eax
+    mov [edx+28], eax
+
+
+    pop ebp
+    ret
+
+calculate_dx:
     mov eax, [ebp+20]   ; x2
     mov ebx, [ebp+12]   ; x1
+    mov [edx+20], DWORD 1
     cmp eax, ebx        ; if x1 > x2
     jae dx_end
     mov eax, [ebp+12]   ; x1
     mov ebx, [ebp+20]   ; x2
     mov [x_side], DWORD -1
-
+    mov [edx+20], DWORD -1
 dx_end:
     sub eax, ebx        ; |x2 - x1|
     mov [x_diff], eax   ; load in variable
-    mov ebx, [ebp+8]    ; struct address
-    mov [ebx+12], eax   ; load in struct
-    mov [ebx+20], DWORD x_side
+    mov [edx+12], eax   ; load in struct
 
-;dy
-    mov eax, [ebp+16]   ; y1
-    mov ebx, [ebp+24]   ; y2
-    sub eax, ebx        ; y1 - y2
-    mov [y_diff], eax   ; load in varibale
-    mov ebx, [ebp+8]    ; struct address
-    mov [ebx+16], eax   ; load in struct
-
-    pop ebp
     ret
 
+calculate_dy:
+    mov eax, [ebp+16]   ; y1
+    mov ebx, [ebp+24]   ; y2
+    mov [edx+24], DWORD 1
+    cmp eax, ebx        ; if y1 > y2
+    jb dy_end
+    mov eax, [ebp+24]   ; y2
+    mov ebx, [ebp+16]   ; y1
+    mov [x_side], DWORD -1
+    mov [edx+24], DWORD -1
+
+dy_end:
+    sub eax, ebx        ; -|y1 - y2|
+    mov [y_diff], eax   ; load in variable
+    mov [edx+16], eax   ; load in struct
+
+    ret
 
 _calculate_width:
 calculate_width:
@@ -99,6 +131,7 @@ calculate_pix:
     mov ebx, [ebp+20]
     shr ebx, 3
     add eax, ebx
+    mov [pixel], eax
     pop ebp
     ret
 

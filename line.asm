@@ -1,21 +1,22 @@
 section .data
     pixel   dd 0
-    mask    db 0
+    mask    dd 0
     width   dd 0
     x_diff  dd 0
     y_diff  dd 0
     x_side  dd 1
     y_side  dd 1
     error   dd 0
-    end_pixel   dd 0
+    x       dd 0
+    y       dd 0
+    x2      dd 0
+    y2      dd 0
+    start_pixel     dd 0
+    width_in_pix    dd 0
 
 section .text
 global _draw_line
 global draw_line
-global _calculate_pix
-global calculate_pix
-global calculate_info
-global _calculate_info
 global test_1
 
 
@@ -26,27 +27,111 @@ draw_line:
 
     call calculate_info
 
-    mov ebx, [ebp+8]    ;   Argument
-    mov ecx, [ebx+36]   ;   Pixel address
-    mov [pixel], ecx    ;   Load pixel address in variable
-    mov eax, [ecx]      ;   Pixel
-    mov edx, [ebx+40]   ;   Mask
-    mov [mask], edx     ;   Load mask in variable
-    not edx             ;   ~Mask
-
-draw_line_loop:
-    and eax, edx        ;   Pixel And ~Mask
-    mov [ecx], eax      ;   Load result in pixel address
-    mov ecx, [ebx+28]   ;   Err
-    mov edx, ecx
-    shl edx, 1
-
+draw_line_loop_start:
+    call draw_pixel
+; if x == x2 and y == y2, break
+draw_line_loop_break_condition_1:
+    mov eax, [x]
+    mov ebx, [x2]
+    cmp eax, ebx
+    jnz draw_line_loop_x_cond
+draw_line_loop_break_condition_2:
+    mov eax, [y]
+    mov ebx, [y2]
+    cmp eax, ebx
+    jz draw_line_loop_end
+draw_line_loop_x_cond:
+    ; e2 in eax
+    mov eax, [error]
+    shl eax, 1
+    mov ebx, [y_diff]
+    cmp eax, ebx
+    jl draw_line_loop_y_cond
+    ; err += dx
+    mov ecx, [error]
+    add ecx, ebx
+    mov [error], ecx
+    ; x++ / x--
+    mov ebx, [x_side]
+    cmp ebx, 0
+    jl draw_line_loop_x_dec
+draw_line_loop_x_inc:
+    mov ebx, [mask]
+    ror bl, 1
+    mov [mask], ebx
+    mov ebx, [x]
+    mov ecx, ebx
+    inc ecx
+    jmp draw_line_loop_x_end
+draw_line_loop_x_dec:
+    mov ebx, [mask]
+    rol bl, 1
+    mov [mask], ebx
+    mov ebx, [x]
+    mov ecx, ebx
+    dec ecx
+draw_line_loop_x_end:
+    mov [x], ecx
+    shr ebx, 3
+    shr ecx, 3
+    sub ecx, ebx
+    mov ebx, [pixel]
+    add ebx, ecx
+    mov [pixel], ebx
+draw_line_loop_y_cond:
+    mov ebx, [x_diff]
+    cmp eax, ebx
+    jg next_pix
+    ; err += dx
+    mov ecx, [error]
+    add ecx, ebx
+    mov [error], ecx
+    mov eax, [y_side]
+    mov ebx, [width]
+    mov ecx, [pixel]
+    mov edx, [y]
+    cmp eax, 0
+    jl draw_line_loop_y_dec
+draw_line_loop_y_inc:
+    add ecx, ebx
+    inc edx
+    jmp draw_line_loop_y_end
+draw_line_loop_y_dec:
+    sub ecx, ebx
+    dec edx
+draw_line_loop_y_end:
+    mov [pixel], ecx
+    mov [y], edx
+next_pix:
+    jmp draw_line_loop_start
+draw_line_loop_end:
     pop ebp
     ret
 
+draw_pixel:
+    mov edx, [pixel]    ;   Pixel address
+    mov eax, [edx]      ;   Pixel
+    mov ebx, [mask]     ;   Mask
+    not ebx             ;   ~Mask
+    and eax, ebx        ;   Pixel And ~Mask
+    mov [edx], eax      ;   Load result in pixel address
+    ret
 
-_calculate_info:
 calculate_info:
+
+    mov eax, [ebp+12]
+    mov [x], eax
+    mov eax, [ebp+16]
+    mov [y], eax
+    mov eax, [ebp+20]
+    mov [x2], eax
+    mov eax, [ebp+24]
+    mov [y2], eax
+    mov edx, [ebp+8]
+    mov eax, [edx+8]
+    mov [start_pixel], eax
+    mov eax, [edx]
+    mov [width_in_pix], eax
 
     call calculate_width
 
@@ -54,108 +139,79 @@ calculate_info:
 
     call calculate_mask
 
-
-    mov edx, [ebp+8]    ; struct address
     call calculate_dx
+
     call calculate_dy
 
     mov eax, [x_diff]
     add eax, [y_diff]
     mov [error], eax
-    mov [edx+28], eax
+    mov eax, [width]
 
     ret
 
 calculate_dx:
-    mov eax, [ebp+20]   ; x2
-    mov ebx, [ebp+12]   ; x1
-    mov [edx+20], DWORD 1
+    mov eax, [x2]   ; x2
+    mov ebx, [x]   ; x1
+    mov [x_side], DWORD 1
     cmp eax, ebx        ; if x1 > x2
-    jae dx_end
-    mov eax, [ebp+12]   ; x1
-    mov ebx, [ebp+20]   ; x2
+    jge dx_end
+    mov eax, [x]   ; x1
+    mov ebx, [x2]   ; x2
     mov [x_side], DWORD -1
-    mov [edx+20], DWORD -1
 dx_end:
     sub eax, ebx        ; |x2 - x1|
     mov [x_diff], eax   ; load in variable
-    mov [edx+12], eax   ; load in struct
 
     ret
 
 calculate_dy:
-    mov eax, [ebp+16]   ; y1
-    mov ebx, [ebp+24]   ; y2
-    mov [edx+24], DWORD 1
+    mov eax, [y]   ; y1
+    mov ebx, [y2]   ; y2
+    mov [y_side], DWORD 1
     cmp eax, ebx        ; if y1 > y2
-    jb dy_end
-    mov eax, [ebp+24]   ; y2
-    mov ebx, [ebp+16]   ; y1
-    mov [x_side], DWORD -1
-    mov [edx+24], DWORD -1
-
+    jle dy_end
+    mov eax, [y2]   ; y2
+    mov ebx, [y]   ; y1
+    mov [y_side], DWORD -1
 dy_end:
     sub eax, ebx        ; -|y1 - y2|
     mov [y_diff], eax   ; load in variable
-    mov [edx+16], eax   ; load in struct
 
     ret
 
-_calculate_width:
 calculate_width:
-    mov eax, [ebp+8]    ; address of img information
-    mov eax, [eax]      ; img width in pixels
+    mov eax, [width_in_pix]      ; img width in pixels
     add eax, 31         ; width + 31
     shr eax, 5          ; (width +31) >> 5
     shl eax, 2          ; ((width + 31) >> 5 )) << 2
     mov [width], eax    ; store width in variable
-    mov ebx, [ebp+8]    ; address of img information
-    mov [ebx+8], eax    ; store width in bytes as thirs field of img information
 
     ret
 
-_calculate_mask:
 calculate_mask:
-    mov eax, 0x80
-    mov ebx, [ebp+12]
-    and ebx, 0x07
-shift_mask:
-    cmp ebx, 0
-    jz shift_mask_end
-    shr eax, 1
-    dec ebx
-    jmp shift_mask
-shift_mask_end:
-    mov ebx, [ebp+8]
-    mov [mask], eax
-    mov [ebx+40], eax
+    mov ecx, [x]
+    mov ebx, 0x80
+    and cl, 0x07
+    shr ebx, cl
+    mov [mask], ebx
     ret
 
-_calculate_pix:
 calculate_pix:
-    mov edx, [ebp+8]    ; edx - struct
 
-    mov ecx, [width]    ; ecx = width
-    mov eax, [ebp+16]   ; eax = y1
-    imul eax, ecx       ; eax = width * y1
-    mov ebx, [ebp+12]   ; ebx = x1
-    shr ebx, 3          ; ebx >> 3
-    add eax, ebx        ; eax += x1 >> 3
-    mov ebx, [edx+32]   ; ebx = start pixel address
-    add eax, ebx        ; eax += start address
-    mov [pixel], eax    ; load pixel address in variable
-    mov [edx+36], eax   ; load pixel address in struct
-
-    mov eax, [ebp+24]   ; eax = y2
-    imul eax, ecx       ; eax *= width
-    add eax, ebx        ; eax += start address
-    mov ebx, [ebp+20]   ; ebx = x2
-    shr ebx, 3          ; ebx >> 3
-    add eax, ebx        ; eax += x2 >> 3
-    mov [end_pixel], eax    ; load pixel address in variable
-    mov [edx+44], eax   ; load pixel address in struct
+    mov [pixel], dword 0
+    mov eax, [width]
+    mov ebx, [y]
+    imul eax, ebx
+    mov ebx, [start_pixel]
+    add ebx, eax
+    mov eax, [x]
+    shr eax, 3
+    add ebx, eax
+    mov [pixel], ebx
 
     ret
+
 
 
 test_1:

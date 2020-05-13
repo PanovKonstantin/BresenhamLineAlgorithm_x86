@@ -2,16 +2,6 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <math.h>
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define BYTE_TO_BINARY(byte)  \
-  (byte & 0x80 ? '1' : '0'), \
-  (byte & 0x40 ? '1' : '0'), \
-  (byte & 0x20 ? '1' : '0'), \
-  (byte & 0x10 ? '1' : '0'), \
-  (byte & 0x08 ? '1' : '0'), \
-  (byte & 0x04 ? '1' : '0'), \
-  (byte & 0x02 ? '1' : '0'), \
-  (byte & 0x01 ? '1' : '0')
 
 typedef struct
 {
@@ -178,33 +168,35 @@ imgInfo* InitScreen (int w, int h)
     return pImg;
 }
 
-typedef struct
-{
-    int x, y, x2, y2, dy, dx, err, width, x_side, y_side;
-    unsigned char * start_pixel, pixel;
-} lineInfo;
-
-// extern lineInfo* calculate_info(lineInfo* lInfo, int width, int x1, int x2, int y1, int y2);
-extern void calculate_info(imgInfo* pImg, int x1, int y1, int x2, int y2);
-extern int draw_line(imgInfo* pImg, int x1, int y1, int x2, int y2);
+extern void draw_line(imgInfo* pImg, int x1, int y1, int x2, int y2);
+extern void horizontal_line(imgInfo* pImg, int x1, int x2, int y);
+extern void vertical_line(imgInfo* pImg, int y1, int y2, int x);
+extern void single_pixel(imgInfo* pImg, int x, int y);
 void Bresenham(imgInfo* pImg, int x1, int y1, int x2, int y2)
 {
-    draw_line(pImg, x1, y1, x2, y2);
+    if (x1 == x2 && y1 == y2)
+        single_pixel(pImg, x1, y1);
+    else if (y1 == y2)
+        horizontal_line(pImg, x1, x2, y1);
+    else if (x1 == x2)
+        vertical_line(pImg, y1, y2, x1);
+    else
+        draw_line(pImg, x1, y1, x2, y2);
 }
 int testBresenham(int a)
 {
     imgInfo* pInfo;
     printf("Size of bmpHeader = %d\n", sizeof(bmpHdr));
-//    if (sizeof(bmpHdr) != 62)
-//    {
-//        printf("Change compilation options so as bmpHdr struct size is 62 bytes.\n");
-//        return 1;
-//    }
+    if (sizeof(bmpHdr) != 62)
+    {
+        printf("Change compilation options so as bmpHdr struct size is 62 bytes.\n");
+        return 1;
+    }
     pInfo = InitScreen(a, a);
     int i, j;
     int ai, aj;
-    ai = a>>3;
-    aj = a - ai;
+    ai = 0;
+    aj = a;
     for(i = ai; i <= aj; i+=(a>>2))
     {
         for (j = ai; j <= aj; j+=(a>>2))
@@ -216,36 +208,8 @@ int testBresenham(int a)
     FreeScreen(pInfo);
     return 0;
 }
-int test()
-{
-    int x1 = 64, y1 =64, x2 = 60, y2 = 60;
-    imgInfo* pInfo;
-    pInfo = InitScreen(128, 128);
-    int qwe = draw_line(pInfo, x1, y1, x2, y2);
-//    *pInfo->pPix &= ~pInfo->mask;
-    saveBMP(pInfo, "result.bmp");
-//    FreeScreen(pInfo);
-//    printf("mask:\t%i\t", pInfo->mask);
-//    int m = pInfo->mask;
-//    printf(" "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n",
-//           BYTE_TO_BINARY(m>>8), BYTE_TO_BINARY(m));
-//    printf("pix:\t%i\t", *pInfo->pPix);
-//    m = *pInfo->pPix;
-//    printf(" "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n",
-//           BYTE_TO_BINARY(m>>8), BYTE_TO_BINARY(m));
-//    printf("pImg:\t%i\t", *pInfo->pImg);
-//    m = *pInfo->pImg;
-//    printf(" "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n",
-//           BYTE_TO_BINARY(m>>8), BYTE_TO_BINARY(m));
-    int m = qwe;
-    printf("asm:\t%i\t", m);
-    printf(" "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n",
-           BYTE_TO_BINARY(m>>8), BYTE_TO_BINARY(m));
-    return 0;
-}
 int main(int argc, char* argv[])
 {
-    testBresenham(128);
-//    test();
+    testBresenham(256);
     return 0;
 }
